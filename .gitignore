@@ -1,0 +1,5 @@
+.env.dev
+.env.*
+*.json
+uploads/*
+!uploads/.gitkeep
