@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     food_db_url: str
     food_db_key: str
     secret_key: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
 
     @computed_field # 모델 필드 처럼 포함 시킴 
     @property
