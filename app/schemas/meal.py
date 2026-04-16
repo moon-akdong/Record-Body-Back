@@ -13,3 +13,7 @@ def MealItemInput(BaseModel):
     sub_category: str
     amount_g: float
 
+def MealImageResponse(BaseModel):
+    file_name : str
+    image_url: str
+    message: str
