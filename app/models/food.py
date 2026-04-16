@@ -18,7 +18,7 @@ class Food(Base):
                               )
     sub_category_id = Column(BigInteger,
                              ForeignKey(
-                                 "food_sub_cateories.id",
+                                 "food_sub_categories.id",
                                  ondelete="SET NULL",
                                  onupdate="CASCADE",
                              ),
@@ -64,7 +64,7 @@ class FoodMainCategory(Base):
 
     food = relationship("Food",
                         back_populates = "main_category",
-                        passtive_deletes=True,
+                        passive_deletes=True  
                         )
     
 class FoodSubCategory(Base):
@@ -76,6 +76,6 @@ class FoodSubCategory(Base):
                         server_default=func.now())
 
     food = relationship("Food",
-                        back_populates = "sub_cateogory",
-                        passtive_deletes=True,
+                        back_populates="sub_category",
+                        passive_deletes=True  
                         )

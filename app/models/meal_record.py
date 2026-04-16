@@ -1,10 +1,11 @@
 from sqlalchemy import Column, BigInteger, String, DateTime, Enum, Numeric, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from enum import Enum
+from sqlalchemy import Enum 
+import enum
 from app.core.database import Base
 
-class NutritionSource(str, Enum):
+class NutritionSource(str, enum.Enum):
     OPEN_API = "open_api"
     AI_INFERENCE = "ai_inference"
     USER_INPUT = "user_input"
@@ -13,7 +14,7 @@ class MealRecord(Base):
     __tablename__ = "meal_records"
     id = Column(BigInteger, primary_key=True, index=True)
     user_id = Column(BigInteger,
-                     ForeignKey("user_id", ondelete="CASCADE", onupdate="CASCADE"),
+                     ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"),
                      nullable=False,
                      index=True
                      )
@@ -55,7 +56,7 @@ class MealItems(Base):
                        index=True,
                        )
     food_id = Column(BigInteger,
-                     ForeignKey("foods.id", ondelete="CASCADE", onupdate="CASCADE"),
+                     ForeignKey("food.id", ondelete="CASCADE", onupdate="CASCADE"),
                      nullable =True,
                      index=True,
                      )

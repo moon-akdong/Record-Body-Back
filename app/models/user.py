@@ -1,15 +1,17 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Enum, Numeric
+from sqlalchemy import Column, BigInteger, String, DateTime, Date, Enum, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from enum import Enum
+from sqlalchemy import Enum 
+import enum
 from app.core.database import Base
+from app.models.meal_record import MealRecord
 
 
-class Gender(str, Enum):
+class Gender(str, enum.Enum):
     MALE = "male"
     FEMALE = "female"
     
-class UserRole(str, Enum):
+class UserRole(str, enum.Enum):
     """DB·API에서 쓰는 role 문자열과 동일하게 유지."""
     SUPER_MANAGER = "super_manager"
     MANAGER = "manager"
@@ -21,7 +23,7 @@ class User(Base):
     username = Column(String(255), nullable=False, index=True)
     email = Column(String(255), nullable=False, unique=True, index=True)
     password = Column(String(255), nullable=False)
-    birth_date = Column(DateTime, nullable=False)
+    birth_date = Column(Date, nullable=False)
     gender = Column(Enum(Gender, 
                          native_enum=False,
                          values_callable=lambda enum_cls: [member.value for member in enum_cls],
@@ -35,7 +37,7 @@ class User(Base):
                        values_callable=lambda enum_cls: [member.value for member in enum_cls],
                        ),
                   nullable=False,
-                  default=UserRole)
+                  default=UserRole.USER.value)
     
     created_at = Column(DateTime,
                         nullable=False,
