@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.user import router as user_router
 from app.api.meal import router as meal_router
 from app.core.config import settings
+from app.core.logging import setup_logger
+
+setup_logger()
 
 app = FastAPI()
 
