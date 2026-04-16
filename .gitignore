@@ -3,3 +3,6 @@
 *.json
 uploads/*
 !uploads/.gitkeep
+*test
+__pycache__/
+*.pyc
