@@ -8,8 +8,15 @@ from app.models.food import FoodMainCategory, FoodSubCategory, Food
 
 logger = logging.getLogger(__name__)
 
-def get_food_nutrient(meal_items:list[MealItemInput],
-                   db:Session): 
+def get_food_nutrient(
+        meal_items:list[MealItemInput],
+        db:Session) -> tuple[dict[str,FoodNutrients], list[MealItemInput]]: 
+    """
+    args:
+        입력된 음식 리스트 
+    returns:
+        음식 이름과 음식 영양 정보, 놓친 입력 데이터 
+    """
     food_map:  dict[str, FoodNutrients] = {}
 
     missing = [] 
@@ -69,6 +76,15 @@ def _get_table_nutrient(meal_items:list[MealItemInput],
 
 
 def _fetch_api_nutrient(item:MealItemInput, db:Session) -> FoodNutrients:
+    """
+    args:
+        DB에 없는 입력 데이터 MealItemInput
+    returns:
+        음식 영양소 데이터
+
+    openAPI 데이터 검색 및 연결 확인 
+    검색 완료 후 DB 저장 후 반환 
+    """
     try:
         openapi_data =fetch_food_date(meal_item=item, db=db)
 
@@ -101,6 +117,15 @@ def _fetch_api_nutrient(item:MealItemInput, db:Session) -> FoodNutrients:
     )
 
 def _get_or_create_food(data:FoodCreateForm, db:Session) -> int:
+    """
+    args:
+        OpenAPI에서 조회된 데이터 
+    returns: 
+        Food table에 저장된 id 
+    
+    OpenAPI에서 조회된 데이터를 main,sub category DB에 저장 후 
+    Food table에 저장 
+    """
     existing_food = db.query(Food).filter(Food.name == data.name).first()
     if existing_food is not None:
         return existing_food
