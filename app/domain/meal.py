@@ -4,13 +4,14 @@ from dataclasses import dataclass
 class MealNutrients:
     food_id:int
     name:str
-    amout_g:float
+    amount_g:float
     calories:float
     carb:float
     protein:float
     fat:float
     sugar:float
-    
+
+@dataclass
 class EatenNutrients:
     calories:float
     carb:float
