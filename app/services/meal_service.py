@@ -1,15 +1,19 @@
 from sqlalchemy.orm import Session
-
+from datetime import datetime, timedelta
 from app.schemas.meal import MealInput, MealItemInput
 from app.domain.food import FoodNutrients
 from app.domain.meal import MealNutrients, EatenNutrients
 from app.services.food import get_food_nutrient
+from app.models.meal_record import MealItems, MealRecord, NutritionSource
 
-def create_meal_record(user_id:int, meal_record:MealInput,db:Session):
+def register_meal_record(user_id:int, meal_record:MealInput,db:Session):
     food_nutrients, missing_food = get_food_nutrient(meal_items=meal_record.items)
     nutrients_per_amount_g = calc_nutrients_per_amount_g(meal_record.items, food_nutrients)
-    one_eaten_nutrietns = calc_one_eaten_nutrients(nutrients_per_amount_g)
-
+    meal_id = create_meal_record(user_id=user_id,
+                       meal_input=meal_record,
+                       nutrients_per_amount_g=nutrients_per_amount_g,
+                       db=db)
+    return meal_id
 
 def calc_nutrients_per_amount_g(
         meal_inputs:MealItemInput, 
@@ -79,3 +83,82 @@ def calc_one_eaten_nutrients(nutrients:dict[str,MealNutrients])->EatenNutrients:
         fat=fat,
         sugar=sugar,
     )
+
+def create_meal_record(
+        user_id:int,
+        meal_input:MealInput,
+        nutrients_per_amount_g:dict[str,MealNutrients],
+        db:Session
+        ):
+    existing_meal = find_duplicate_meal_record(user_id=user_id, eaten_at=meal_input.eaten_at)
+    if existing_meal is not None:
+        return existing_meal
+
+    one_eaten_nutrietns = calc_one_eaten_nutrients(nutrients_per_amount_g)
+
+    meal = MealRecord(
+        user_id=user_id,
+        eaten_at=meal_input.eaten_at,
+        image_url=meal_input.image_url,
+        note=meal_input.note,
+        total_calories=one_eaten_nutrietns.calories,
+        total_carb=one_eaten_nutrietns.carb,
+        total_protein=one_eaten_nutrietns.protein,
+        total_fat=one_eaten_nutrietns.fat,
+        total_sugar=one_eaten_nutrietns.sugar,
+    )
+    db.add(meal)
+    db.flush()
+
+    create_meal_items(nutrients=nutrients_per_amount_g, meal_id=meal.id, db=db)
+    db.commit()
+    db.refresh(meal)
+    return meal.id
+
+def create_meal_items(
+        nutrients:dict[str,MealNutrients],
+        meal_id:int,
+        db:Session,
+        ):
+    saved_items: list[MealNutrients] = []
+
+    for food_name, meal_nutirents in nutrients.items():
+        meal_item = MealItems(
+            food_id = meal_nutirents.food_id,
+            meal_record_id=meal_id,
+            food_name_snapshot=food_name,
+            amount_g=meal_nutirents.amount_g,
+            calories=meal_nutirents.calories,
+            carb=meal_nutirents.carb,
+            protein=meal_nutirents.protein,
+            fat=meal_nutirents.fat,
+            sugar=meal_nutirents.sugar,
+            confidence=1.0,
+            estimation_source=NutritionSource.OPEN_API,
+            is_user_corrected=True,
+        )
+        db.add(meal_item)
+        saved_items.append(meal_item)
+    db.flush()
+    return None
+
+def find_duplicate_meal_record(
+        user_id:int,
+        eaten_at:datetime,
+        db:Session):
+    window_start = eaten_at - timedelta(minutes=5)
+    window_end = eaten_at - timedelta(minutes=5)
+    cadidate_meals = (
+        db.query(MealRecord)
+        .filter(
+            MealRecord.user_id == user_id,
+            MealRecord.eaten_at >= window_start,
+            MealRecord.eaten_at <= window_end,
+        )
+        .all()
+    )
+
+    if cadidate_meals is None:
+        return None 
+    
+    return cadidate_meals
