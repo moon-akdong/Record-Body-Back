@@ -16,7 +16,7 @@ def create_user(user_create:UserCreate, db:Session) -> User:
         password=get_password_hash(user_create.password),
         username=user_create.name,
         birth_date=user_create.birth_date,
-        gender=user_create.gender.value,
+        gender=user_create.gender.value.lower(),
         height=user_create.height,
         weight=user_create.weight,
     )

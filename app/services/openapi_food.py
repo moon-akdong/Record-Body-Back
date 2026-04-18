@@ -14,7 +14,7 @@ def _normalize_text(text: str | None) -> str:
 
 def get_food_db_data(
     food_name: str,
-    sub_cateogry: str | None = None,
+    sub_category: str | None = None,
     page_no: int = 1,
     num_of_rows: int = 30,
 ) -> dict:
@@ -25,8 +25,8 @@ def get_food_db_data(
         "type": "json",
         "FOOD_NM_KR": _normalize_text(food_name),
     }
-    if sub_cateogry:
-        params["FOOD_CAT1_NM"] = sub_cateogry
+    if sub_category:
+        params["FOOD_CAT1_NM"] = sub_category
     
     response = requests.get(FOOD_DB_ENDPOINT, params=params, timeout=30)
     response.raise_for_status()
@@ -92,9 +92,9 @@ def filter_food_item(
 
     return None
 
-def fetch_food_date(meal_item:MealItemInput,db:Session):
+def fetch_food_date(meal_item:MealItemInput):
     food_infos_json = get_food_db_data(food_name=meal_item.food_name_kr,
-                     sub_cateogry=meal_item.sub_category)
+                     sub_category=meal_item.sub_category)
     items = food_infos_json.get("body",{}).get("items",[])
     if not items:
         return None
@@ -107,14 +107,13 @@ def fetch_food_date(meal_item:MealItemInput,db:Session):
         return None
     
     return FoodCreateForm(
-            name=item.get("FOOD_NM_KR", meal_item.food_name_kr),
+            name=meal_item.food_name_kr,
             main_category=item.get("FOOD_OR_NM", meal_item.main_category),
             sub_category=item.get("FOOD_CAT1_NM", meal_item.sub_category),
             calories_100g=_to_float(item.get("AMT_NUM1")),
-            water_g=_to_float(item.get("AMT_NUM2")),
-            carb_per_g=_to_float(item.get("AMT_NUM5")),
-            protein_per_g=_to_float(item.get("AMT_NUM3")),
-            fat_per_g=_to_float(item.get("AMT_NUM4")),
-            sugar_per_g=_to_float(item.get("AMT_NUM7")),
+            carb_100g=_to_float(item.get("AMT_NUM5")),
+            protein_100g=_to_float(item.get("AMT_NUM3")),
+            fat_100g=_to_float(item.get("AMT_NUM4")),
+            sugar_100g=_to_float(item.get("AMT_NUM7")),
             serving_size_g=_gram_to_float(item.get("SERVING_SIZE"))
         )
