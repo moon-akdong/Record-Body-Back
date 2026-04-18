@@ -7,8 +7,15 @@ from app.services.food import get_food_nutrient
 from app.models.meal_record import MealItems, MealRecord, NutritionSource
 
 def register_meal_record(user_id:int, meal_record:MealInput,db:Session):
-    food_nutrients, missing_food = get_food_nutrient(meal_items=meal_record.items)
+
+    existing_meal_id = find_duplicate_meal_record(user_id=user_id, eaten_at=meal_record.eaten_at,db=db)
+    if existing_meal_id is not None:
+        return existing_meal_id
+    
+    food_nutrients, missing_food = get_food_nutrient(meal_items=meal_record.items,db=db)
+
     nutrients_per_amount_g = calc_nutrients_per_amount_g(meal_record.items, food_nutrients)
+
     meal_id = create_meal_record(user_id=user_id,
                        meal_input=meal_record,
                        nutrients_per_amount_g=nutrients_per_amount_g,
@@ -21,7 +28,7 @@ def calc_nutrients_per_amount_g(
         )->dict[str,MealNutrients]:
 
     def calc_convert_nutritens(nutrients, serving_size, amount_g):
-        return (float(nutrients) / float(serving_size)) * float(amount_g)
+        return round((float(nutrients) / float(serving_size)) * float(amount_g),2)
     result: dict[str,MealNutrients] = {}
 
     for item in meal_inputs:
@@ -34,7 +41,7 @@ def calc_nutrients_per_amount_g(
         result[item_name] = MealNutrients(
             food_id=food_info.food_id,
             name = food_info.name,
-            amout_g=item.amount_g,
+            amount_g=item.amount_g,
             calories= calc_convert_nutritens(food_info.calories_100g,
                                              food_info.serving_size_g, 
                                              item.amount_g),
@@ -76,7 +83,7 @@ def calc_one_eaten_nutrients(nutrients:dict[str,MealNutrients])->EatenNutrients:
         fat += item.fat
         sugar += item.sugar
 
-    return MealNutrients(
+    return EatenNutrients(
         calories=calories,
         carb=carb,
         protein=protein,
@@ -90,12 +97,7 @@ def create_meal_record(
         nutrients_per_amount_g:dict[str,MealNutrients],
         db:Session
         ):
-    existing_meal = find_duplicate_meal_record(user_id=user_id, eaten_at=meal_input.eaten_at)
-    if existing_meal is not None:
-        return existing_meal
-
     one_eaten_nutrietns = calc_one_eaten_nutrients(nutrients_per_amount_g)
-
     meal = MealRecord(
         user_id=user_id,
         eaten_at=meal_input.eaten_at,
@@ -125,8 +127,8 @@ def create_meal_items(
     for food_name, meal_nutirents in nutrients.items():
         meal_item = MealItems(
             food_id = meal_nutirents.food_id,
-            meal_record_id=meal_id,
-            food_name_snapshot=food_name,
+            record_id=meal_id,
+            name=food_name,
             amount_g=meal_nutirents.amount_g,
             calories=meal_nutirents.calories,
             carb=meal_nutirents.carb,
@@ -135,7 +137,6 @@ def create_meal_items(
             sugar=meal_nutirents.sugar,
             confidence=1.0,
             estimation_source=NutritionSource.OPEN_API,
-            is_user_corrected=True,
         )
         db.add(meal_item)
         saved_items.append(meal_item)
@@ -143,22 +144,22 @@ def create_meal_items(
     return None
 
 def find_duplicate_meal_record(
-        user_id:int,
-        eaten_at:datetime,
-        db:Session):
+        user_id: int,
+        eaten_at: datetime,
+        db: Session):
     window_start = eaten_at - timedelta(minutes=5)
-    window_end = eaten_at - timedelta(minutes=5)
-    cadidate_meals = (
+    window_end = eaten_at + timedelta(minutes=5)
+    candidate_meals = (
         db.query(MealRecord)
         .filter(
             MealRecord.user_id == user_id,
             MealRecord.eaten_at >= window_start,
             MealRecord.eaten_at <= window_end,
         )
-        .all()
+        .first()
     )
 
-    if cadidate_meals is None:
+    if not candidate_meals:
         return None 
     
-    return cadidate_meals
+    return candidate_meals.id
