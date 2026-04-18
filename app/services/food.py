@@ -24,7 +24,7 @@ def get_food_nutrient(
     food_map = food_items.copy()
 
     table_missing = list(item for item in meal_items if item.food_name_kr in missing_names)
-    
+
     for item in table_missing:
         food_item = _fetch_api_nutrient(item,db) 
         if food_item is None:
@@ -46,19 +46,19 @@ def _get_table_nutrient(meal_items:list[MealItemInput],
 
     foods = (
         db.query(Food)
-        .filter(Food.food_name_kr.in_(names))
+        .filter(Food.name.in_(names))
         .all()
         ) # 없는 건 안나옴 
 
     food_map = {
-        food.food_name_kr: food for food in foods
+        food.name: food for food in foods
         }
     
     result = {
         name: FoodNutrients(
             food_id=food.id,
-            name=food.food_name_kr,
-            calories_100g=food.calories_100g,
+            name=food.name,
+            calories_100g=food.calories_per_100g,
             carb_100g=food.carb_per_100g,
             sugar_100g=food.sugar_per_100g,
             protein_100g=food.protein_per_100g,
@@ -86,11 +86,14 @@ def _fetch_api_nutrient(item:MealItemInput, db:Session) -> FoodNutrients:
     검색 완료 후 DB 저장 후 반환 
     """
     try:
-        openapi_data =fetch_food_date(meal_item=item, db=db)
+        openapi_data =fetch_food_date(meal_item=item)
 
     except Exception:
         logger.exception(
-            "OpenAPI 연결 실패"
+            "OpenAPI 연결 실패: food_name=%s, main_category=%s, sub_category=%s",
+            item.food_name_kr,
+            item.main_category,
+            item.sub_category,
         )
         return None 
 
@@ -131,17 +134,17 @@ def _get_or_create_food(data:FoodCreateForm, db:Session) -> int:
         return existing_food
     
     main_category_id = _get_or_create_category(table=FoodMainCategory,category_name=data.main_category, db=db)
-    sub_category_id = _get_or_create_category(table=FoodSubCategory,category_name=data.sub_cateogry,db=db)
+    sub_category_id = _get_or_create_category(table=FoodSubCategory,category_name=data.sub_category,db=db)
     
     food = Food(
         name=data.name,
         main_category_id=main_category_id,
         sub_category_id=sub_category_id,
-        calories_per_100g=data.calories_per_100g,
-        carb_per_100g=data.carb_per_100g,
-        sugar_per_100g=data.sugar_per_100g,
-        protein_per_100g=data.protein_per_100g,
-        fat_per_100g=data.fat_per_100g,
+        calories_per_100g=data.calories_100g,
+        carb_per_100g=data.carb_100g,
+        sugar_per_100g=data.sugar_100g,
+        protein_per_100g=data.protein_100g,
+        fat_per_100g=data.fat_100g,
         serving_size_g=data.serving_size_g,
     )
     db.add(food)
