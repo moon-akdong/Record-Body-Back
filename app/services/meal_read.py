@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.meal_record import MealRecord, MealItems
 from sqlalchemy import text
 from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timedelta
 
 def to_float(value):
     return float(value) if value is not None else 0.0
@@ -70,3 +71,42 @@ def transform_meal(rows):
         })
 
     return meal
+
+def read_meals_by_date(eaten_at: datetime, user_id: int, db: Session):
+    start = eaten_at.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+
+    query = text("""
+    SELECT 
+        mr.id AS meal_id,
+        mr.user_id,
+        mr.eaten_at,
+        mr.total_calories,
+        mr.total_carb,
+        mr.total_protein,
+        mr.total_fat,
+        mr.total_sugar,
+        mi.name,
+        mi.amount_g,
+        mi.calories,
+        mi.carb,
+        mi.protein,
+        mi.fat,
+        mi.sugar
+    FROM meal_records AS mr
+    JOIN meal_items AS mi ON mi.record_id = mr.id
+    WHERE mr.user_id = :user_id
+    AND mr.eaten_at >= :start
+    AND mr.eaten_at < :end
+    ORDER BY mr.eaten_at DESC
+    """)
+
+    result = db.execute(query, {
+        "user_id": user_id,
+        "start": start,
+        "end": end
+    })
+
+    rows = result.mappings().all()
+
+    return transform_meal_list(rows)
