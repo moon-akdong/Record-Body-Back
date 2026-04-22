@@ -1,13 +1,14 @@
 from sqlalchemy import Column, BigInteger, String, DateTime, Enum, Numeric, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy import UniqueConstraint
 
 from app.core.database import Base
 
 class Food(Base):
     __tablename__= "food"
     id =Column(BigInteger, primary_key=True, index=True)
-    name = Column(String(150), nullable=False, unique=True, index=True)
+    name = Column(String(150), nullable=False, unique=False, index=True)
     main_category_id = Column(BigInteger,
                               ForeignKey(
                                   "food_main_categories.id",
@@ -50,6 +51,7 @@ class Food(Base):
                                 back_populates="food")
 
     __table_args__=(
+        UniqueConstraint("name", "sub_category_id", name="uq_food_name_sub_category"),
         Index("idx_food_main_category_id", "main_category_id"),
         Index("idx_foods_sub_category_id", "sub_category_id"),
     )

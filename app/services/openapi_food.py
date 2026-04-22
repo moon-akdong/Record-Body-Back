@@ -107,11 +107,11 @@ def fetch_food_date(meal_item:MealItemInput):
         return None
     
     return FoodCreateForm(
-            name=meal_item.food_name_kr,
+            name=item.get("FOOD_NM_KR",meal_item.food_name_kr),
             main_category=item.get("FOOD_OR_NM", meal_item.main_category),
             sub_category=item.get("FOOD_CAT1_NM", meal_item.sub_category),
             calories_100g=_to_float(item.get("AMT_NUM1")),
-            carb_100g=_to_float(item.get("AMT_NUM5")),
+            carb_100g=_to_float(item.get("AMT_NUM6")),
             protein_100g=_to_float(item.get("AMT_NUM3")),
             fat_100g=_to_float(item.get("AMT_NUM4")),
             sugar_100g=_to_float(item.get("AMT_NUM7")),
