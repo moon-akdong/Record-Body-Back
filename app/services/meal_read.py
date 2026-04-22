@@ -110,3 +110,36 @@ def read_meals_by_date(eaten_at: datetime, user_id: int, db: Session):
     rows = result.mappings().all()
 
     return transform_meal_list(rows)
+
+def transform_meal_list(rows):
+    if not rows:
+        return []
+
+    meal_map = {}
+
+    for row in rows:
+        meal_id = row["meal_id"]
+
+        if meal_id not in meal_map:
+            meal_map[meal_id] = {
+                "user_id": row["user_id"],
+                "eaten_at": row["eaten_at"],
+                "total_calories": to_float(row["total_calories"]),
+                "total_carb": to_float(row["total_carb"]),
+                "total_protein": to_float(row["total_protein"]),
+                "total_fat": to_float(row["total_fat"]),
+                "total_sugar": to_float(row["total_sugar"]),
+                "items": []
+            }
+
+        meal_map[meal_id]["items"].append({
+            "name": row["name"],
+            "amount_g": to_float(row["amount_g"]),
+            "calories": to_float(row["calories"]),
+            "carb": to_float(row["carb"]),
+            "protein": to_float(row["protein"]),
+            "fat": to_float(row["fat"]),
+            "sugar": to_float(row["sugar"]),
+        })
+
+    return list(meal_map.values())
