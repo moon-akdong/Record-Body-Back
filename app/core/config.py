@@ -6,7 +6,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env.dev",
@@ -19,6 +18,7 @@ class Settings(BaseSettings):
     db_host: str = "localhost"
     db_port: int = 3306
     db_name: str
+    base_url:str 
 
     redis_broker_url: str
     redis_backend_url: str
