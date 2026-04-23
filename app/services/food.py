@@ -91,19 +91,17 @@ def _fetch_api_nutrient(item:MealItemInput, db:Session) -> FoodNutrients:
 
     except Exception:
         logger.exception(
-            "OpenAPI 연결 실패: food_name=%s, main_category=%s, sub_category=%s",
+            "OpenAPI 연결 실패: food_name=%s,category=%s",
             item.food_name_kr,
-            item.main_category,
-            item.sub_category,
+            item.category,
         )
         return None 
 
     if openapi_data is None:
         logger.warning(
-            "OpenAPI에서 음식 정보를 찾을 수 없음 : food_name=%s, main_category=%s, sub_category=%s",
+            "OpenAPI에서 음식 정보를 찾을 수 없음 : food_name=%s, category=%s",
             item.food_name_kr,
-            item.main_category,
-            item.sub_category,
+            item.category,
         )
         return None 
 

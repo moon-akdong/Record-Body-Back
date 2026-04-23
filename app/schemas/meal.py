@@ -2,10 +2,10 @@ from pydantic import BaseModel
 from datetime import datetime
 class MealItemInput(BaseModel):
     food_name_kr:str
-    main_category:str
-    sub_category: str
+    category: str
     amount_g: float
 class MealInput(BaseModel):
+    meal_type:str
     image_url:str
     eaten_at:datetime
     note:str|None
@@ -32,11 +32,17 @@ class MealItemResponse(BaseModel):
     sugar: float
 
 class MealResponse(BaseModel):
+    meal_id:int
     user_id:int
     eaten_at: datetime
+    image_url:str
     total_calories: float
     total_carb: float
     total_protein: float
     total_fat: float
     total_sugar: float
     items: list[MealItemResponse]
+
+
+class SubCategoryResponse(BaseModel):
+    name:str

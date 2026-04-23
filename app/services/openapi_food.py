@@ -50,24 +50,18 @@ def _gram_to_float(value: str | None) -> float:
 def filter_food_item(
     items: list[dict],
     food_name: str,
-    main_category: str | None = None,
-    sub_category: str | None = None,
+    category: str | None = None,
 ) -> dict | None:
     normalized_food_name = _normalize_text(food_name)
-    normalized_main_category = _normalize_text(main_category)
-    normalized_sub_category = _normalize_text(sub_category)
+    normalized_category = _normalize_text(category)
 
     exact_matches = [
         item
         for item in items
         if _normalize_text(item.get("FOOD_NM_KR")) == normalized_food_name
         and (
-            not normalized_main_category
-            or _normalize_text(item.get("FOOD_OR_NM")) == normalized_main_category
-        )
-        and (
-            not normalized_sub_category
-            or _normalize_text(item.get("FOOD_CAT1_NM")) == normalized_sub_category
+            not normalized_category
+            or _normalize_text(item.get("FOOD_CAT1_NM")) == normalized_category
         )
     ]
     if exact_matches:
@@ -94,22 +88,21 @@ def filter_food_item(
 
 def fetch_food_date(meal_item:MealItemInput):
     food_infos_json = get_food_db_data(food_name=meal_item.food_name_kr,
-                     sub_category=meal_item.sub_category)
+                     sub_category=meal_item.category)
     items = food_infos_json.get("body",{}).get("items",[])
     if not items:
         return None
     
     item = filter_food_item(items, food_name=meal_item.food_name_kr, 
-                            main_category=meal_item.main_category,
-                            sub_category = meal_item.sub_category)
+                            sub_category = meal_item.category)
 
     if item is None:
         return None
     
     return FoodCreateForm(
             name=item.get("FOOD_NM_KR",meal_item.food_name_kr),
-            main_category=item.get("FOOD_OR_NM", meal_item.main_category),
-            sub_category=item.get("FOOD_CAT1_NM", meal_item.sub_category),
+            main_category=item.get("FOOD_OR_NM", None),
+            sub_category=item.get("FOOD_CAT1_NM", meal_item.category),
             calories_100g=_to_float(item.get("AMT_NUM1")),
             carb_100g=_to_float(item.get("AMT_NUM6")),
             protein_100g=_to_float(item.get("AMT_NUM3")),
