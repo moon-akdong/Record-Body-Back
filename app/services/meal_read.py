@@ -86,6 +86,7 @@ def read_meals_by_date(eaten_at: datetime, user_id: int, db: Session):
         mr.total_protein,
         mr.total_fat,
         mr.total_sugar,
+        mr.image_url
         mi.name,
         mi.amount_g,
         mi.calories,
@@ -122,8 +123,10 @@ def transform_meal_list(rows):
 
         if meal_id not in meal_map:
             meal_map[meal_id] = {
-                "user_id": row["user_id"],
+                "meal_id": int(row["meal_id"]),
+                "user_id": int(row["user_id"]),
                 "eaten_at": row["eaten_at"],
+                "image_url" : row["image_url"],
                 "total_calories": to_float(row["total_calories"]),
                 "total_carb": to_float(row["total_carb"]),
                 "total_protein": to_float(row["total_protein"]),
