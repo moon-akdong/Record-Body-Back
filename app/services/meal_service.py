@@ -28,12 +28,12 @@ def calc_nutrients_per_amount_g(
         )->dict[str,MealNutrients]:
 
     def calc_convert_nutritens(nutrients, serving_size, amount_g):
-        return round((float(nutrients) / float(serving_size)) * float(amount_g),2)
+        return round(((float(nutrients) / float(serving_size)) * float(amount_g)),2)
     result: dict[str,MealNutrients] = {}
 
     for item in meal_inputs:
         item_name = item.food_name_kr
-        food_info = nutreints_per_100g[item_name]
+        food_info = nutreints_per_100g.get(item_name,None)
         if not food_info:
             # missing_food ? 
             continue
@@ -48,10 +48,10 @@ def calc_nutrients_per_amount_g(
             carb= calc_convert_nutritens(food_info.carb_100g,
                                          food_info.serving_size_g,
                                          item.amount_g),
-            protein= calc_convert_nutritens(food_info.calories_100g,
+            protein= calc_convert_nutritens(food_info.protein_100g,
                                              food_info.serving_size_g, 
                                              item.amount_g),
-            fat = calc_convert_nutritens(food_info.calories_100g,
+            fat = calc_convert_nutritens(food_info.fat_100g,
                                          food_info.serving_size_g,
                                          item.amount_g),
             sugar= calc_convert_nutritens(food_info.sugar_100g,
@@ -103,6 +103,7 @@ def create_meal_record(
         eaten_at=meal_input.eaten_at,
         image_url=meal_input.image_url,
         note=meal_input.note,
+        meal_type=meal_input.meal_type,
         total_calories=one_eaten_nutrietns.calories,
         total_carb=one_eaten_nutrietns.carb,
         total_protein=one_eaten_nutrietns.protein,
