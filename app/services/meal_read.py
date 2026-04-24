@@ -11,13 +11,17 @@ def read_meal_id(id:int,user_id,db:Session):
     
     query = text("""
     SELECT 
+        mr.id,
         mr.user_id,
-        mr.eaten_at, 
+        mr.eaten_at,
         mr.total_calories,
         mr.total_carb,
         mr.total_protein,
         mr.total_fat,
         mr.total_sugar,
+        mr.image_url,
+        mr.note,
+        mr.meal_type,
         mi.name,
         mi.amount_g,
         mi.calories,
@@ -48,8 +52,13 @@ def transform_meal(rows):
     first = rows[0]
 
     meal = {
+        "id":first["id"],
         "user_id": first["user_id"],
         "eaten_at": first["eaten_at"],
+        "meal_type": first["meal_type"],
+        "image_url" : first["image_url"],
+        "meal_type": first["meal_type"],
+        "note":first["note"],
         "total_calories": to_float(first["total_calories"]),
         "total_carb": to_float(first["total_carb"]),
         "total_protein": to_float(first["total_protein"]),
@@ -78,7 +87,7 @@ def read_meals_by_date(eaten_at: datetime, user_id: int, db: Session):
 
     query = text("""
     SELECT 
-        mr.id AS meal_id,
+        mr.id,
         mr.user_id,
         mr.eaten_at,
         mr.total_calories,
@@ -86,7 +95,9 @@ def read_meals_by_date(eaten_at: datetime, user_id: int, db: Session):
         mr.total_protein,
         mr.total_fat,
         mr.total_sugar,
-        mr.image_url
+        mr.image_url,
+        mr.note,
+        mr.meal_type,
         mi.name,
         mi.amount_g,
         mi.calories,
@@ -119,14 +130,16 @@ def transform_meal_list(rows):
     meal_map = {}
 
     for row in rows:
-        meal_id = row["meal_id"]
+        meal_id = row["id"]
 
         if meal_id not in meal_map:
             meal_map[meal_id] = {
-                "meal_id": int(row["meal_id"]),
+                "id": int(row["id"]),
                 "user_id": int(row["user_id"]),
                 "eaten_at": row["eaten_at"],
                 "image_url" : row["image_url"],
+                "meal_type": row["meal_type"],
+                "note":row["note"],
                 "total_calories": to_float(row["total_calories"]),
                 "total_carb": to_float(row["total_carb"]),
                 "total_protein": to_float(row["total_protein"]),

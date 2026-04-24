@@ -14,7 +14,7 @@ def _normalize_text(text: str | None) -> str:
 
 def get_food_db_data(
     food_name: str,
-    sub_category: str | None = None,
+    category: str | None = None,
     page_no: int = 1,
     num_of_rows: int = 30,
 ) -> dict:
@@ -25,8 +25,8 @@ def get_food_db_data(
         "type": "json",
         "FOOD_NM_KR": _normalize_text(food_name),
     }
-    if sub_category:
-        params["FOOD_CAT1_NM"] = sub_category
+    if category:
+        params["FOOD_CAT1_NM"] = category
     
     response = requests.get(FOOD_DB_ENDPOINT, params=params, timeout=30)
     response.raise_for_status()
@@ -88,13 +88,13 @@ def filter_food_item(
 
 def fetch_food_date(meal_item:MealItemInput):
     food_infos_json = get_food_db_data(food_name=meal_item.food_name_kr,
-                     sub_category=meal_item.category)
+                     category=meal_item.category)
     items = food_infos_json.get("body",{}).get("items",[])
     if not items:
         return None
     
     item = filter_food_item(items, food_name=meal_item.food_name_kr, 
-                            sub_category = meal_item.category)
+                            category = meal_item.category)
 
     if item is None:
         return None

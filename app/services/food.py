@@ -164,7 +164,7 @@ def _get_or_create_category(table, category_name: str, db: Session) -> int:
     return category.id
 
 def _get_sub_category_map(meal_items, db):
-    sub_names = list(set(item.sub_category for item in meal_items))
+    sub_names = list(set(item.category for item in meal_items))
 
     subs = (
         db.query(FoodSubCategory)
@@ -178,14 +178,14 @@ def _get_table_nutrient_with_subcategory(
         meal_items: list[MealItemInput], 
         db):
     
-    # 1️⃣ sub_category → id 매핑
+    # 1️⃣ category → id 매핑
     sub_map = _get_sub_category_map(meal_items, db)
 
     # 2️⃣ 조건 생성
     conditions = []
 
     for item in meal_items:
-        sub_id = sub_map.get(item.sub_category)
+        sub_id = sub_map.get(item.category)
 
         if sub_id:
             conditions.append(
@@ -195,7 +195,7 @@ def _get_table_nutrient_with_subcategory(
                 )
             )
         else:
-            # sub_category 없으면 name만 fallback
+            # category 없으면 name만 fallback
             conditions.append(
                 Food.name == item.food_name_kr
             )
@@ -218,7 +218,7 @@ def _get_table_nutrient_with_subcategory(
     missing = []
 
     for item in meal_items:
-        sub_id = sub_map.get(item.sub_category)
+        sub_id = sub_map.get(item.category)
         key = (item.food_name_kr, sub_id)
 
         food = food_map.get(key)
