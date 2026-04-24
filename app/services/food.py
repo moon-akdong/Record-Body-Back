@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import Tuple
 import logging
@@ -95,15 +96,21 @@ def _fetch_api_nutrient(item:MealItemInput, db:Session) -> FoodNutrients:
             item.food_name_kr,
             item.category,
         )
-        return None 
-
+        raise HTTPException(
+        status_code=502,
+        detail="외부 음식 데이터 API 호출에 실패했습니다.",
+    )
+    
     if openapi_data is None:
         logger.warning(
             "OpenAPI에서 음식 정보를 찾을 수 없음 : food_name=%s, category=%s",
             item.food_name_kr,
             item.category,
         )
-        return None 
+        raise HTTPException(
+        status_code=404,
+        detail=f"'{item.food_name_kr}' 음식 정보를 찾을 수 없습니다.",
+    )
 
     food_id = _get_or_create_food(openapi_data, db)
 
