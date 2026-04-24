@@ -20,6 +20,7 @@ class MealRecord(Base):
                      )
     eaten_at = Column(DateTime, nullable=False, index=True)
     image_url = Column(String(1000), nullable=True)
+    meal_type = Column(String(100),nullable=False)
     note = Column(String(500), nullable=True)
     total_calories = Column(Numeric(10, 2), nullable=False)
     total_carb = Column(Numeric(10, 2), nullable=False, default=0)

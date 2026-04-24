@@ -32,15 +32,17 @@ class MealItemResponse(BaseModel):
     sugar: float
 
 class MealResponse(BaseModel):
-    meal_id:int
+    id:int
     user_id:int
     eaten_at: datetime
     image_url:str
+    meal_type:str
     total_calories: float
     total_carb: float
     total_protein: float
     total_fat: float
     total_sugar: float
+    note:str
     items: list[MealItemResponse]
 
 
