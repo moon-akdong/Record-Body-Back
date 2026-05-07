@@ -4,13 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.user import router as user_router
 from app.api.meal import router as meal_router
 from app.api.upload import router as upload_router
-from app.core.config import settings
 from app.core.logging import setup_logger
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from app.core.database import Base, engine
 
-Base.metadata.create_all(bind=engine)
 setup_logger()
 
 app = FastAPI()
