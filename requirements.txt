@@ -20,6 +20,7 @@ pydantic_core==2.41.5
 python-jose
 python-jose[cryptography]
 PyMySQL[rsa]
+python-multipart
 python-dotenv==1.2.2
 requests==2.33.0
 setuptools==80.10.2
