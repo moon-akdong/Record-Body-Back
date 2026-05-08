@@ -18,8 +18,8 @@ pydantic==2.12.5
 pydantic-settings==2.13.1
 pydantic_core==2.41.5
 python-jose
-# python-jose[cryptography]==3.5.0
-PyMySQL==1.1.2
+python-jose[cryptography]
+PyMySQL[rsa]
 python-dotenv==1.2.2
 requests==2.33.0
 setuptools==80.10.2
