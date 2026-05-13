@@ -137,7 +137,7 @@ def _get_or_create_food(data:FoodCreateForm, db:Session) -> int:
     """
     existing_food = db.query(Food).filter(Food.name == data.name).first()
     if existing_food is not None:
-        return existing_food
+        return existing_food.id
     
     main_category_id = _get_or_create_category(table=FoodMainCategory,category_name=data.main_category, db=db)
     sub_category_id = _get_or_create_category(table=FoodSubCategory,category_name=data.sub_category,db=db)
