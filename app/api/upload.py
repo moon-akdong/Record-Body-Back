@@ -42,7 +42,7 @@ async def upload_image(
     file_bytes = await file.read()
     saved_path.write_bytes(file_bytes)
     image_url = (
-        f"{settings.base_url}uploads/food/"
+        f"{settings.base_url}/uploads/food/"
         f"{now.strftime('%Y')}/{now.strftime('%m')}/{now.strftime('%d')}/"
         f"{current_user.id}/{saved_filename}"
     )
