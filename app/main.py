@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.user import router as user_router
 from app.api.meal import router as meal_router
 from app.api.upload import router as upload_router
+from app.api.check_record import router as check_router
 from app.core.logging import setup_logger
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
@@ -24,6 +25,7 @@ app.add_middleware(
 app.include_router(user_router)
 app.include_router(meal_router)
 app.include_router(upload_router)
+app.include_router(check_router)
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # 00_nutrients_proj/
 app.mount("/uploads", StaticFiles(directory=BASE_DIR / "uploads"), name="uploads")

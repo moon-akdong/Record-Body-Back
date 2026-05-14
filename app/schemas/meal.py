@@ -48,3 +48,6 @@ class MealResponse(BaseModel):
 
 class SubCategoryResponse(BaseModel):
     name:str
+
+class MonthRecord(BaseModel):
+    month:list[str]
