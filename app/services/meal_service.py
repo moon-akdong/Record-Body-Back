@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.schemas.meal import MealInput, MealItemInput
@@ -10,7 +11,10 @@ def register_meal_record(user_id:int, meal_record:MealInput,db:Session):
 
     existing_meal_id = find_duplicate_meal_record(user_id=user_id, eaten_at=meal_record.eaten_at,db=db)
     if existing_meal_id is not None:
-        return existing_meal_id
+      raise HTTPException(
+          status_code=409,
+          detail=f"해당 시간대에 이미 등록된 식사 기록이 있습니다. (meal_id: {existing_meal_id})"
+      )
     
     food_nutrients, missing_food = get_food_nutrient(meal_items=meal_record.items,db=db)
 
