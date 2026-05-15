@@ -12,7 +12,6 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("/register")
 def register(user_create:UserCreate,db:Session=Depends(get_db)):
-    print(user_create)
     existing_user = get_user(user_create.email, db)
     if existing_user:
         raise HTTPException(
