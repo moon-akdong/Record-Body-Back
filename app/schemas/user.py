@@ -16,6 +16,17 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class UserUpdateBody(BaseModel):
+    height: float | None = None
+    weight: float | None = None
+
+class UserProfileUpdate(BaseModel):
+    name: str
+    birth_date: date
+    gender: Gender
+    height: float
+    weight: float
+
 class UserResponse(BaseModel):
     email:EmailStr
     name: str
