@@ -5,8 +5,8 @@ from app.core.database import get_db
 from app.core.security import create_access_token, get_current_user
 from app.core.dependency import verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse
-from app.services.user_service import get_user, create_user
+from app.schemas.user import UserCreate, UserLogin, UserResponse, UserUpdateBody, UserProfileUpdate
+from app.services.user_service import get_user, create_user, update_user, update_user_profile
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -51,4 +51,36 @@ def read_me(current_user: User = Depends(get_current_user)):
         gender=current_user.gender,
         height=current_user.height,
         weight=current_user.weight
+    )
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    user_update: UserUpdateBody,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    updated_user = update_user(current_user, user_update, db)
+    return UserResponse(
+        email=updated_user.email,
+        name=updated_user.username,
+        birth_date=updated_user.birth_date,
+        gender=updated_user.gender,
+        height=updated_user.height,
+        weight=updated_user.weight,
+    )
+
+@router.put("/me", response_model=UserResponse)
+def update_profile(
+    profile: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    updated_user = update_user_profile(current_user, profile, db)
+    return UserResponse(
+        email=updated_user.email,
+        name=updated_user.username,
+        birth_date=updated_user.birth_date,
+        gender=updated_user.gender,
+        height=updated_user.height,
+        weight=updated_user.weight,
     )
