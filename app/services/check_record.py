@@ -24,3 +24,21 @@ def month_record_lookup(user_id:int, year:int, month:int , db:Session):
         # func.date : date(2026,5,1) 
         # .isoformat: "2026-05-01" 문자열로 변경 
     return sorted([row[0].isoformat() for row in rows])
+
+def fetch_week_record(user_id:int, start_day:datetime, end_day:datetime, db:Session):
+    week_start = start_day
+    week_end = end_day
+
+    rows = period_lookup(user_id=user_id, start_day=week_start, end_day=week_end, db=db)
+    return [row for row in rows]
+
+def fetch_month_record(user_id:int, year:int, month:int , db:Session):
+    month_start = datetime(year, month, 1)
+
+    if month == 12:
+        month_end = datetime(year + 1, 1, 1)
+    else:
+        month_end = datetime(year, month + 1, 1)
+
+    rows = period_lookup(user_id=user_id, start_day=month_start, end_day=month_end, db=db)
+    return [row for row in rows]
