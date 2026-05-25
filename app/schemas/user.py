@@ -34,3 +34,7 @@ class UserResponse(BaseModel):
     gender:Gender # male, female
     height:float
     weight:float
+
+class ChangePassword(BaseModel):
+    current_password:str
+    new_password:str

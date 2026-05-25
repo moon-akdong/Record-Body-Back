@@ -41,3 +41,9 @@ def update_user_profile(user: User, profile: UserProfileUpdate, db: Session) -> 
     db.commit()
     db.refresh(user)
     return user
+
+def change_user_password(user:User, password:str,db:Session):
+    user.password = get_password_hash(password)
+    db.commit()
+    db.refresh(user)
+    return user

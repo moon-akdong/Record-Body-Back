@@ -5,8 +5,14 @@ from app.core.database import get_db
 from app.core.security import create_access_token, get_current_user
 from app.core.dependency import verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, UserUpdateBody, UserProfileUpdate
-from app.services.user_service import get_user, create_user, update_user, update_user_profile
+from app.schemas.user import (
+    UserCreate, UserLogin, UserResponse,
+    UserUpdateBody, UserProfileUpdate, ChangePassword
+)
+from app.services.user_service import (
+    get_user, create_user, update_user, 
+    update_user_profile,
+    change_user_password)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -84,3 +90,16 @@ def update_profile(
         height=updated_user.height,
         weight=updated_user.weight,
     )
+
+@router.put("/change_password")
+def change_password(
+    password:ChangePassword,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):  
+    in_cur_pas = password.current_password
+    
+    if not verify_password(in_cur_pas,current_user.password):
+        raise HTTPException(status_code=401, detail="현재 비밀번호가 일치하지 않습니다.")
+    change_user_password(current_user,password.new_password, db)
+    return True
