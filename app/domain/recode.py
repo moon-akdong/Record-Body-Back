@@ -7,5 +7,6 @@ class DailyNutritionSummary:
     calories_sum: int 
     carb_sum: int 
     protein_sum: int 
-    fat_sum:int 
-    sugar_sum:int 
+    fat_sum:int
+    sugar_sum:int
+    meal_count:int

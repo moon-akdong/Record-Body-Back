@@ -29,6 +29,7 @@ def get_daily_nutrition_summary(user_id:int, start_day:datetime, end_day:datetim
       func.sum(MealRecord.total_protein),
       func.sum(MealRecord.total_fat),
       func.sum(MealRecord.total_sugar),
+      func.count(MealRecord.id),
         ).filter(
             MealRecord.user_id == user_id,
             MealRecord.eaten_at >= start_day,
@@ -43,6 +44,7 @@ def get_daily_nutrition_summary(user_id:int, start_day:datetime, end_day:datetim
             protein_sum=row[3],
             fat_sum=row[4],
             sugar_sum=row[5],
+            meal_count=row[6],
         ) for row in rows
     ]
 
