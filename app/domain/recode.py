@@ -10,3 +10,11 @@ class DailyNutritionSummary:
     fat_sum:int
     sugar_sum:int
     meal_count:int
+    meal_types:str
+
+@dataclass
+class DailyTdee:
+    date:datetime
+    tdee_info:float
+    message:str
+
