@@ -6,6 +6,7 @@ from app.core.security import get_current_user
 from app.services.check_record import get_monthly_recorded_dates
 from app.schemas.meal import MonthRecord
 from app.schemas.recode import PeriodNutritionRequest
+from app.services.body_calc import period_tdee
 
 router = APIRouter(prefix="/check_record", tags=["check_record"])
 
@@ -21,3 +22,10 @@ def check_month(year:int,
                                       db=db)
     return {"month":month_record}
 
+@router.post("/daliy_tdee")
+def check_tdee_during(
+    request:PeriodNutritionRequest,
+    current_user:User = Depends(get_current_user),
+    db:Session = Depends(get_db)):
+
+    return period_tdee(request=request, user=current_user, db=db)
