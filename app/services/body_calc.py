@@ -1,12 +1,10 @@
 from enum import Enum
-from collections import defaultdict
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.services.check_record import get_daily_nutrition_summary
+from app.services.check_record import CaloriesLog
 from app.services.calc import calc_age
-from app.schemas.recode import PeriodNutritionRequest
-from app.domain.recode import DailyNutritionSummary, DailyTdee
-from collections.abc import MutableMapping
+from app.schemas.recode import OneDayTdee, PeriodTdee
+from app.domain.recode import DailyTdee, DailyTdee,OneDayActiveLevel
 
 class ActivityLevel(float, Enum):
     SEDENTARY = 1.2        # 비활동적 (운동 거의 안 함)
@@ -22,70 +20,111 @@ MEAL_TYPE_KR = {
     "snack": "간식",
     "night": "야식",
 }
+ACTIVITY_LEVELS = ["sedentary", "light", "moderate", "active", "very_active"]
 
-def total_daily_energy_expenditure(gender:str,
-                                   age:int,
-                                   weight:float,
-                                   height:float,
-                                   activate_weight:float) -> float:
-    """
-    하루 총 에너지 소비량 
-    """
-    bmr = mifflin_formula(gender=gender,
-                          age=age,
-                          weight=weight,
-                          height=height)
+class Tdee:
+    def __init__(self, user:User):
+        self.gender = str(user.gender)
+        self.weight = float(user.weight)
+        self.height = float(user.height)
+        self.age = calc_age(user.birth_date)
     
-    return bmr * activate_weight
+    def calc_activity(self, activity_level):
+        
+        aw = ActivityLevel[activity_level.upper()]
+        tdee = self._total_daily_energy_expenditure(gender=self.gender,
+                                            age=self.age,
+                                            weight=self.weight,
+                                            height=self.height,
+                                            activate_weight=aw
+                                            )
+        return tdee
 
-def mifflin_formula(gender:str,
-                    age:int,
-                    weight:float,
-                    height:float) -> float:
+    def _calc_bmr_mifflin_formula(
+            self,
+            gender:str,
+            age:int,
+            weight:float,
+            height:float) -> float:
+        
+        MALE_WEIGHT = 5
+        FEMALE_WEIGHT = 161
+        
+        formula = (10*weight) + (6.25*height) - (5*age) 
+        if gender == 'male':
+            return formula + MALE_WEIGHT
+        else:
+            return formula - FEMALE_WEIGHT
+        
+    def _total_daily_energy_expenditure(
+            self,
+            gender:str,
+            age:int,
+            weight:float,
+            height:float,
+            activate_weight:float) -> float:
+        
+        """
+        하루 총 에너지 소비량 
+        """
+        bmr = self._calc_bmr_mifflin_formula(gender=gender,
+                            age=age,
+                            weight=weight,
+                            height=height)
+        
+        return bmr * activate_weight
 
-    MALE_WEIGHT = 5
-    FEMALE_WEIGHT = 161
-    
-    formula = (10*weight) + (6.25*height) - (5*age) 
-    if gender == 'male':
-        return formula + MALE_WEIGHT
-    else:
-        return formula - FEMALE_WEIGHT
+class CalorieManager:
+    def __init__(self,user:User, db:Session):
+        
+        self.tdee = Tdee(user)
+        self.log = CaloriesLog(user.id,db)
 
-def period_tdee(request:PeriodNutritionRequest,
-                user:User,
-                db:Session):
-    tdee = calc_tdee(request.activity_level,user)
-    period_info = get_daily_nutrition_summary(user.id, 
-                                              start_day=request.start_date, 
-                                              end_day=request.end_date,
-                                              db=db)
-    return calc_period_tdee(period_info,tdee)
-
-def calc_tdee(activity_level, user:User):
-    birth_day = user.birth_date
-    age = calc_age(birth_day)
-    aw = ActivityLevel[activity_level.upper()]
-
-    tdee = total_daily_energy_expenditure(gender=user.gender,
-                                          age=age,
-                                          weight=user.weight,
-                                          height=user.height,
-                                          activate_weight=aw
-                                          )
-    return tdee
-    
-def calc_period_tdee(period_calories:list[DailyNutritionSummary],
-                     tdee:int)->dict[str,DailyTdee]:
-    result = {}
-    for pc in period_calories:
-        result[str(pc.date)] = DailyTdee(
-            date=pc.date,
-            tdee_info=pc.calories_sum - tdee,
-            message=daily_message(pc.meal_types,pc.meal_count)
+    def _build_daily_tdee(self, intake, activity_level) -> DailyTdee:
+        return DailyTdee(
+            calories=intake.calories_sum,
+            tdee=round(float(intake.calories_sum) - self._get_daily_tdee(activity_level),2),
+            message=self._daily_message(intake.meal_types, intake.meal_count)
         )
-    return result
+    
+    def get_period_balance(self,start_date,end_date,activity_level)-> list[PeriodTdee]:
 
-def daily_message(meal_types:str, meal_count:int) -> str:
-    kr_types = ",".join(MEAL_TYPE_KR[t] for t in meal_types.split(",")) 
-    return f"{meal_count}끼 {kr_types} 식사 기록"
+        intakes = self.log.fetch_calorie_period(start_date=start_date, end_date=end_date)
+        results = []
+        for intake in intakes:
+            results.append(PeriodTdee(
+                date=str(intake.date),
+                daily_tdee=self._build_daily_tdee(intake, activity_level)
+            ))
+        return results
+
+    def get_balance(self,today) -> OneDayTdee:
+        intake = self.log.fetch_calorie(today=today)
+
+        if intake is None:
+            return None
+        
+        message = self._daily_message(intake.meal_types, intake.meal_count)
+        activity_levels_tdee = {}
+
+        for val in ACTIVITY_LEVELS:
+            activity_levels_tdee[val] = round(float(intake.calories_sum) - self._get_daily_tdee(val),2)
+
+        return OneDayTdee(
+            total_calories=intake.calories_sum,
+            levels=OneDayActiveLevel(**activity_levels_tdee),
+            message = message
+            )
+    
+    def _get_daily_tdee(
+            self,
+            activity_level:str):
+        tdee = self.tdee.calc_activity(activity_level=activity_level)
+        return float(tdee)
+    
+    def _daily_message(self, meal_types: str, meal_count: int) -> str:
+        if not meal_types:
+            return f"{meal_count}끼 식사 기록"
+        kr_types = ",".join(MEAL_TYPE_KR[t] for t in meal_types.split(","))
+        return f"{kr_types} 기록"
+    
