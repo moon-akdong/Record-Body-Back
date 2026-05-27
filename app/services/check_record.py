@@ -2,8 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.meal_record import MealRecord
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
-from app.domain.recode import DailyNutritionSummary
+from app.domain.recode import PeriodNutrition
 
 def get_recorded_dates(user_id:int, start_day:datetime, end_day:datetime, db:Session):
     """기간 내 식사 기록이 존재하는 날짜 목록을 중복 없이 조회한다.
@@ -16,39 +17,6 @@ def get_recorded_dates(user_id:int, start_day:datetime, end_day:datetime, db:Ses
     ).distinct().all()
 
     return rows
-
-def get_daily_nutrition_summary(user_id:int, start_day:datetime, end_day:datetime, db:Session) -> list[DailyNutritionSummary]:
-    """기간 내 일별 영양소(칼로리, 탄수화물, 단백질, 지방, 당류) 합계를 조회한다.
-    반환 예시: [(datetime.date(2026, 5, 20), 2100, 250, 80, 60, 30), ...]
-    순서: (날짜, 칼로리, 탄수화물, 단백질, 지방, 당류)
-    """
-    rows = db.query(
-      func.date(MealRecord.eaten_at),
-      func.sum(MealRecord.total_calories),
-      func.sum(MealRecord.total_carb),
-      func.sum(MealRecord.total_protein),
-      func.sum(MealRecord.total_fat),
-      func.sum(MealRecord.total_sugar),
-      func.count(MealRecord.id),
-      func.group_concat(MealRecord.meal_type),
-        ).filter(
-            MealRecord.user_id == user_id,
-            MealRecord.eaten_at >= start_day,
-            MealRecord.eaten_at < end_day,
-        ).group_by(func.date(MealRecord.eaten_at)).all()
-
-    return [
-        DailyNutritionSummary(
-            date=row[0],
-            calories_sum=row[1],
-            carb_sum=row[2],
-            protein_sum=row[3],
-            fat_sum=row[4],
-            sugar_sum=row[5],
-            meal_count=row[6],
-            meal_types=row[7],
-        ) for row in rows
-    ]
 
 def get_monthly_recorded_dates(user_id:int, year:int, month:int, db:Session):
     """특정 월에 식사 기록이 존재하는 날짜를 ISO 문자열 리스트로 반환한다.
@@ -64,21 +32,55 @@ def get_monthly_recorded_dates(user_id:int, year:int, month:int, db:Session):
     rows = get_recorded_dates(user_id=user_id, start_day=month_start, end_day=month_end, db=db)
     return sorted([row[0].isoformat() for row in rows])
 
-def get_period_nutrition_summary(user_id:int, start_day:datetime, end_day:datetime, db:Session) -> list[DailyNutritionSummary]:
-    """지정 기간의 일별 영양소 합계를 조회한다.
-    반환: list[DailyNutritionSummary]
-    """
-    return get_daily_nutrition_summary(user_id=user_id, start_day=start_day, end_day=end_day, db=db)
 
-def get_monthly_nutrition_summary(user_id:int, year:int, month:int, db:Session) -> list[DailyNutritionSummary]:
-    """특정 월의 일별 영양소 합계를 조회한다.
-    반환: list[DailyNutritionSummary]
-    """
-    month_start = datetime(year, month, 1)
+class CaloriesLog:
+    def __init__(self, user_id:int, db:Session):
+        self.user_id = user_id
+        self.db = db 
 
-    if month == 12:
-        month_end = datetime(year + 1, 1, 1)
-    else:
-        month_end = datetime(year, month + 1, 1)
+    def _base_query(self):
 
-    return get_daily_nutrition_summary(user_id=user_id, start_day=month_start, end_day=month_end, db=db)
+        return self.db.query(
+            func.date(MealRecord.eaten_at),
+            func.sum(MealRecord.total_calories),
+            func.sum(MealRecord.total_carb),
+            func.sum(MealRecord.total_protein),
+            func.sum(MealRecord.total_fat),
+            func.sum(MealRecord.total_sugar),
+            func.count(MealRecord.id),
+            func.group_concat(MealRecord.meal_type),
+        ).filter(MealRecord.user_id == self.user_id)
+    
+    def fetch_calorie(self, today: datetime):
+        row = self._base_query().filter(
+            func.date(MealRecord.eaten_at) == today.date(),
+        ).group_by(func.date(MealRecord.eaten_at)).first()
+
+        if row is None:
+            return None
+        return self._to_nutrition(row)
+
+    def fetch_calorie_period(self, start_date: datetime, end_date: datetime):
+        rows = self._base_query().filter(
+            MealRecord.eaten_at >= start_date,
+            MealRecord.eaten_at < end_date,
+        ).group_by(func.date(MealRecord.eaten_at)).all()
+
+        return [self._to_nutrition(row) for row in rows]
+    
+    def _to_nutrition(self, row) -> PeriodNutrition:
+        return PeriodNutrition(
+            date=row[0],
+            calories_sum=row[1],
+            carb_sum=row[2],
+            protein_sum=row[3],
+            fat_sum=row[4],
+            sugar_sum=row[5],
+            meal_count=row[6],
+            meal_types=row[7],
+        )
+    
+    def get_monthly_nutrition(self, year: int, month: int):
+        month_start = datetime(year, month, 1)
+        month_end = month_start + relativedelta(months=1)
+        return self.fetch_calorie_period(month_start, month_end)
