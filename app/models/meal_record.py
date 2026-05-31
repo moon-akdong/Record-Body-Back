@@ -5,6 +5,13 @@ from sqlalchemy import Enum
 import enum
 from app.core.database import Base
 
+class MealType(str, enum.Enum):
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch"
+    DINNER = "dinner"
+    SNACK = "snack"
+    NIGHT = "night"
+
 class NutritionSource(str, enum.Enum):
     OPEN_API = "open_api"
     AI_INFERENCE = "ai_inference"
